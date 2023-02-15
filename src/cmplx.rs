@@ -34,6 +34,16 @@ impl ops::Add for Sc16 {
         }
     }
 }
+impl ops::AddAssign for Sc16 {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            0: Complex::new(
+                self.0.re.saturating_add(other.0.re),
+                self.0.im.saturating_add(other.0.im),
+            ),
+        };
+    }
+}
 impl ops::Sub for Sc16 {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
@@ -45,6 +55,17 @@ impl ops::Sub for Sc16 {
         }
     }
 }
+impl ops::SubAssign for Sc16 {
+    fn sub_assign(&mut self, other: Self) {
+        *self = Self {
+            0: Complex::new(
+                self.0.re.saturating_sub(other.0.re),
+                self.0.im.saturating_sub(other.0.im),
+            ),
+        };
+    }
+}
+
 impl ops::Mul for Sc16 {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
@@ -63,6 +84,25 @@ impl ops::Mul for Sc16 {
                     .to_fixed::<I1F15>(),
             ),
         }
+    }
+}
+impl ops::MulAssign for Sc16 {
+    fn mul_assign(&mut self, other: Self) {
+        let a = self.0.re;
+        let b = self.0.im;
+        let c = other.0.re;
+        let d = other.0.im;
+
+        *self = Self {
+            0: Complex::new(
+                a.wide_mul(c)
+                    .saturating_sub(b.wide_mul(d))
+                    .to_fixed::<I1F15>(),
+                a.wide_mul(d)
+                    .saturating_add(b.wide_mul(c))
+                    .to_fixed::<I1F15>(),
+            ),
+        };
     }
 }
 
@@ -136,5 +176,55 @@ mod test {
         let b = Array::from_iter((0..8).map(|_| Sc16::new(0.0, 0.5)));
         let d = a * b;
         assert_eq!(d, Array::from_iter(0..8).map(|_| Sc16::new(0.0, 0.25)));
+    }
+    //#[test]
+    fn ndarray_scalar() {
+        //     let a = Array::from_iter((0..8).map(|_| Sc16::new(0.5, 0.0)));
+        //        let b = Sc16::new(0.25, 0.25);
+        //       let d = a * b;
+        //      assert_eq!(d, Array::from_iter(0..8).map(|_| Sc16::new(0.0, 0.25)));
+        //
+    }
+    #[test]
+    fn ndarray_slicing() {
+        let a = Array::from_iter((0..8).map(|x| Sc16::new(x as f64 / 16.0, 0.0)));
+        let c = a.slice(s![0..;2]);
+        assert_eq!(c.len(), 4);
+        assert_eq!(c[1], Sc16::new(0.125, 0.0));
+        assert_eq!(c[2], Sc16::new(0.25, 0.0));
+        assert_eq!(c[3], Sc16::new(0.375, 0.0));
+    }
+
+    #[test]
+    fn ndarray_slicing_move() {
+        let a = Array::from_iter((0..8).map(|x| Sc16::new(x as f64 / 16.0, 0.0)));
+        let c = a.slice_move(s![0..;2]);
+        assert_eq!(c.len(), 4);
+        assert_eq!(c[1], Sc16::new(0.125, 0.0));
+        assert_eq!(c[2], Sc16::new(0.25, 0.0));
+        assert_eq!(c[3], Sc16::new(0.375, 0.0));
+    }
+    #[test]
+    fn ndarray_slicing_mut() {
+        let mut a = Array::from_iter((0..8).map(|x| Sc16::new(x as f64 / 16.0, 0.0)));
+        let mut c = a.slice_mut(s![0..;2]);
+        assert_eq!(c.len(), 4);
+        c[2] += Sc16::new(0.25, 0.0);
+        assert_eq!(c[1], Sc16::new(0.125, 0.0));
+        assert_eq!(c[2], Sc16::new(0.50, 0.0));
+        assert_eq!(c[3], Sc16::new(0.375, 0.0));
+        c[3] -= Sc16::new(0.125, 0.0);
+        assert_eq!(c[1], Sc16::new(0.125, 0.0));
+        assert_eq!(c[2], Sc16::new(0.50, 0.0));
+        assert_eq!(c[3], Sc16::new(0.25, 0.0));
+        assert_eq!(a[6], Sc16::new(0.25, 0.0));
+    }
+    #[test]
+    fn ndarray_select() {
+        let mut a = Array::from_iter((0..8).map(|x| Sc16::new(x as f64 / 16.0, 0.0)));
+        let c = a.select(Axis(0), &[4, 1, 3]);
+        assert_eq!(c[0], Sc16::new(0.25, 0.0));
+        assert_eq!(c[1], Sc16::new(0.0625, 0.0));
+        assert_eq!(c[2], Sc16::new(0.1875, 0.0));
     }
 }
