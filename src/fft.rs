@@ -20,18 +20,25 @@ pub fn brev<T: Clone>(a: &[T]) -> Vec<T> {
     brevidxs(a.len()).iter().map(|i| a[*i].clone()).collect()
 }
 
+trait Phasor {
+    fn phasor(arg: i32, m: usize) -> Self;
+}
+
+impl Phasor for Complex<f64> {
+    fn phasor(arg: i32, m: usize) -> Self {
+        Complex::new(0.0, -2.0 * PI * arg as f64 / (2.0f64.powi(m as i32 + 1))).exp()
+    }
+}
+
 pub fn fft(y: &Array1<Complex<f64>>) -> Array1<Complex<f64>> {
     let mut x = y.clone();
     let n = x.len();
     let nstages = logb(n);
     for m in 0..nstages {
         let w = Array::from_iter((0..n / 2).map(|k| {
-            Complex::new(
-                0.0,
-                -2.0 * PI * (brevidx(k, m) as f64) / (2.0f64.powi(m as i32 + 1)),
-            )
-        }))
-        .mapv(|x| x.exp());
+            let a: Complex<f64> = Phasor::phasor(brevidx(k, m) as i32, m);
+            a
+        }));
 
         let e = &x.clone().slice_move(s![..(n / 2)]);
         let o = &(x.clone().slice_move(s![(n / 2)..]) * w);

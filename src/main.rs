@@ -5,6 +5,7 @@ use fft::fft;
 use ndarray::prelude::*;
 use num::Complex;
 use plotters::prelude::*;
+use rayon::prelude::*;
 use std::f64::consts::PI;
 
 fn plot(o: &Array1<Complex<f64>>) -> Result<(), Box<dyn std::error::Error>> {
@@ -16,7 +17,7 @@ fn plot(o: &Array1<Complex<f64>>) -> Result<(), Box<dyn std::error::Error>> {
         .fold(0.0, |x, y| y.im.min(x))
         .min(o.fold(0.0, |x, y| y.re.min(x)));
 
-    let root = BitMapBackend::new("1.png", (640, 480)).into_drawing_area();
+    let root = BitMapBackend::new("2.png", (640, 480)).into_drawing_area();
     root.fill(&WHITE)?;
     let mut chart = ChartBuilder::on(&root)
         .caption(format!("FFT output {}", n), ("Arial", 50).into_font())
