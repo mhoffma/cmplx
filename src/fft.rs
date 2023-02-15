@@ -1,7 +1,6 @@
 #![allow(unused)]
 use ndarray::prelude::*;
 use num::Complex;
-use std::f64::consts::PI;
 
 pub fn logb(n: usize) -> usize {
     (n as f32).log(2.0).ceil() as usize
@@ -26,7 +25,15 @@ trait Phasor {
 
 impl Phasor for Complex<f64> {
     fn phasor(arg: i32, m: usize) -> Self {
+        use std::f64::consts::PI;
         Complex::new(0.0, -2.0 * PI * arg as f64 / (2.0f64.powi(m as i32 + 1))).exp()
+    }
+}
+
+impl Phasor for Complex<f32> {
+    fn phasor(arg: i32, m: usize) -> Self {
+        use std::f32::consts::PI;
+        Complex::new(0.0, -2.0 * PI * arg as f32 / (2.0f32.powi(m as i32 + 1))).exp()
     }
 }
 
@@ -52,6 +59,7 @@ pub fn fft(y: &Array1<Complex<f64>>) -> Array1<Complex<f64>> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::f64::consts::PI;
     #[test]
     fn t0() {
         let mut a = Array::from_iter((0..8).map(|x| Complex::new(1.0, 0.0)));

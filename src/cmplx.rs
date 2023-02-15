@@ -5,7 +5,7 @@ use num::Complex;
 use std::fmt;
 use std::ops;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Sc16(Complex<I1F15>);
 impl Sc16 {
     pub fn new(r: f64, i: f64) -> Sc16 {
@@ -119,5 +119,22 @@ mod test {
         let d = a.exp();
         let c = Sc16::new(thetaf.cos(), thetaf.sin());
         assert_eq!(format!("{}", d), format!("{}", c));
+    }
+
+    use ndarray::prelude::*;
+    #[test]
+    fn ndarray_tests() {
+        let a = Array::from_iter((0..8).map(|_| Sc16::new(0.5, 0.0)));
+        let b = Array::from_iter((0..8).map(|_| Sc16::new(0.0, 0.5)));
+        let d = a + b;
+        assert_eq!(d, Array::from_iter(0..8).map(|_| Sc16::new(0.5, 0.5)));
+        let a = Array::from_iter((0..8).map(|_| Sc16::new(0.5, 0.0)));
+        let b = Array::from_iter((0..8).map(|_| Sc16::new(0.0, 0.5)));
+        let d = a - b;
+        assert_eq!(d, Array::from_iter(0..8).map(|_| Sc16::new(0.5, -0.5)));
+        let a = Array::from_iter((0..8).map(|_| Sc16::new(0.5, 0.0)));
+        let b = Array::from_iter((0..8).map(|_| Sc16::new(0.0, 0.5)));
+        let d = a * b;
+        assert_eq!(d, Array::from_iter(0..8).map(|_| Sc16::new(0.0, 0.25)));
     }
 }
